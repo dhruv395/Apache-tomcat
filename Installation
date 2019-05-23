@@ -1,0 +1,114 @@
+apt-get update
+apt-get install default-jdk
+groupadd tomcat
+useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat     ->so nobody can log into the account)
+
+Install Tomcat now
+change to the /tmp directory on your server. 
+This is a good directory to download ephemeral items, like the Tomcat tarball, which we won't need after extracting the Tomcat contents:
+
+cd /tmp
+Use curl to download the link that you copied from the Tomcat website:
+curl -O http://apache.mirrors.ionfish.org/tomcat/tomcat-8/v8.5.5/bin/apache-tomcat-8.5.5.tar.gz
+mkdir /opt/tomcat
+tar xzvf apache-tomcat-8*tar.gz -C /opt/tomcat --strip-components=1
+cd /opt/tomcat
+chgrp -R tomcat /opt/tomcat         -> Give the tomcat group ownership over the entire installation directory:
+
+give the tomcat group read access to the conf directory and all of its contents, and execute access to the directory itself:
+chmod -R g+r conf
+chmod g+x conf
+chown -R tomcat webapps/ work/ temp/ logs/      ->Make the tomcat user the owner of the webapps, work, temp, and logs directories:
+
+We want to be able to run Tomcat as a service, so we will set up systemd service file.
+Tomcat needs to know where Java is installed. This path is commonly referred to as "JAVA_HOME"
+
+
+create the systemd service file. Open a file called tomcat.service
+vim /etc/systemd/system/tomcat.service
+
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=network.target
+
+[Service]
+Type=forking
+
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+
+User=tomcat
+Group=tomcat
+UMask=0007
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+save and exit from file
+systemctl daemon-reload
+
+update-java-alternatives -l
+Setup JAVA_HOME in Ubuntu
+
+vim ~/.bashrc
+JAVA_HOME=/usr/lib/jvm/YOUR_JAVA_VERSION 
+export PATH=$PATH:$JAVA_HOME/bin 
+export JAVA_HOME
+save and exit
+
+Start the Tomcat service
+systemctl enable tomcat
+systemctl status tomcat
+
+Allow traffic to that port 
+
+ufw allow 8080
+
+Test the Tomcat Server
+http://server_domain_or_IP:8080
+
+Configure Tomcat Web Management Interface
+vim /opt/tomcat/conf/tomcat-users.xml
+
+ <role rolename="manager-gui"/> 
+<role rolename="manager-script"/> 
+<role rolename="manager-jmx"/> 
+<role rolename="manager-status"/> 
+<role rolename="admin-gui"/> 
+<role rolename="admin-script"/> 
+<user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status,admin-gui,admin-script"/> 
+save and exit
+
+Tomcat restrict access to the Manager and Host Manager apps to connections coming from the server itself. 
+Since we are installing on a remote machine, you will probably want to remove or alter this restriction. 
+To change the IP address restrictions on these, open the appropriate context.xml files.
+
+For the Manager app
+vim /opt/tomcat/webapps/manager/META-INF/context.xml
+For the Host Manager app
+
+vim /opt/tomcat/webapps/host-manager/META-INF/context.xml
+
+comment out the IP address restriction to allow connections from anywhere. Alternatively, 
+if you would like to allow access only to connections coming from your own IP address,
+you can add your public IP address to the list:
+
+<Context antiResourceLocking="false" privileged="true" >
+  <!--<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />-->
+</Context>
+
+Save and close the files 
+restart the Tomcat service:
+Access the Web Interface
+
+
+
+
