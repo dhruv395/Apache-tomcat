@@ -76,6 +76,7 @@ http://server_domain_or_IP:8080
 
 Configure Tomcat Web Management Interface
 vim /opt/tomcat/conf/tomcat-users.xml
+    Add below lines between the tomcat-users tags..
 
  <role rolename="manager-gui"/> 
 <role rolename="manager-script"/> 
