@@ -1,0 +1,28 @@
+•	cd /opt/apache-tomcat-8.5.32/webapps/
+
+1.	Rename the current war file for backup
+
+mv oldfile.war newfile.war_backup07052019
+
+2.	copy .war  file  and ROOT directory to /opt/apache-tomcat/webapp from  source server
+scp -rp user@remoteserverip:/opt/apache-tomcat-8.5.32/webapps/newfile.war .
+scp -rp user@remoteserver:/opt/apache-tomcat-8.5.32/webapps/ROOT .
+
+3.	Go inside ROOT directory and edit web-config.js 
+•	Modify  window.apiEnvironment = 'dev_prod';
+
+4.	Login to DB server and create a empty DB
+mysql -h <rdsendpoint> -P 3306 -u <username> -p
+create database <dbname>;
+
+5.	Restore the DBdump file to the empty DB
+mysql -h <rdsendpoint> -P 3306 -u dbadmin -p <dbname> < dump.sql
+
+6.	Now cd /root/propertiesfile/
+•	Modify app.properties
+database.host=rds end point 
+database.url=jdbc:mysql://RdsEndPoint
+database.port=3306
+database.username=
+database.password=
+database.name=
